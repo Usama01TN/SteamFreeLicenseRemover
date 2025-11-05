@@ -94,6 +94,46 @@ function isDemo(linkElement) {
     return false;
 }
 
+// Function to check if the item is a DLC.
+function isDLC(linkElement) {
+    // Look for the table row containing this link.
+    const row = linkElement.closest('tr');
+    if (!row) return false;
+    const rowText = row.textContent.toLowerCase();
+    // Check for common DLC indicators.
+    if (rowText.includes('dlc') || 
+        rowText.includes('downloadable content') ||
+        rowText.includes('expansion') ||
+        rowText.includes('add-on') ||
+        rowText.includes('addon') ||
+        rowText.includes('content pack') ||
+        rowText.includes('season pass') ||
+        rowText.includes('package') ||
+        rowText.includes('bundle')) {
+        return true;
+    }
+    // Check the game name cells for DLC indicators.
+    const nameCells = row.querySelectorAll('td');
+    for (const cell of nameCells) {
+        const cellText = cell.textContent.toLowerCase().trim();
+        if (cellText.includes('dlc') || 
+            cellText.includes('downloadable content') ||
+            cellText.includes('expansion') ||
+            cellText.includes('add-on') ||
+            cellText.includes('addon') ||
+            cellText.includes('content pack') ||
+            cellText.includes('season pass') ||
+            cellText.includes('package') ||
+            cellText.includes('bundle') ||
+            cellText.match(/\bdlc\b/) || // Exact word match for "dlc".
+            cellText.match(/\bexpansion\b/) || // Exact word match for "expansion".
+            cellText.match(/\badd[- ]?on\b/)) { // Match "addon", "add-on", "add on".
+            return true;
+        }
+    }
+    return false;
+}
+
 async function removeGame(id) {
     console.log(`Removing game with ID ${id}...`);
     try {
@@ -135,9 +175,10 @@ async function removeGames() {
     let skippedCount = 0;
     let soundtrackCount = 0;
     let demoCount = 0;
+    let dlcCount = 0;
     const intervalID = setInterval(() => {
-        console.log(`Games removed: ${removedCount} of ${totalGames}, Skipped: ${skippedCount}, Soundtracks: ${soundtrackCount}, Demos: ${demoCount}`);
-        if (removedCount + skippedCount + soundtrackCount + demoCount >= totalGames) {
+        console.log(`Games removed: ${removedCount} of ${totalGames}, Skipped: ${skippedCount}, Soundtracks: ${soundtrackCount}, Demos: ${demoCount}, DLCs: ${dlcCount}`);
+        if (removedCount + skippedCount + soundtrackCount + demoCount + dlcCount >= totalGames) {
             clearInterval(intervalID);
         }
     }, 1000);
@@ -145,6 +186,12 @@ async function removeGames() {
     for (const link of removeLinks) {
         const id = extractIdFromLink(link.href);
         if (id) {
+            // Check if the item is a DLC
+            if (isDLC(link)) {
+                console.log(`Skipping DLC with ID ${id}`);
+                dlcCount++;
+                continue;
+            }
             // Check if the item is a Demo.
             if (isDemo(link)) {
                 console.log(`Skipping Demo with ID ${id}`);
@@ -169,8 +216,7 @@ async function removeGames() {
             console.log(`Failed to extract ID from link: ${link.href}`);
         }
     }
-
-    console.log(`Process completed. Games removed: ${removedCount}, Played games skipped: ${skippedCount}, Soundtracks preserved: ${soundtrackCount}, Demos preserved: ${demoCount}, Total: ${totalGames}`);
+    console.log(`Process completed. Games removed: ${removedCount}, Played games skipped: ${skippedCount}, Soundtracks preserved: ${soundtrackCount}, Demos preserved: ${demoCount}, DLCs preserved: ${dlcCount}, Total: ${totalGames}`);
 }
 
 removeGames();
